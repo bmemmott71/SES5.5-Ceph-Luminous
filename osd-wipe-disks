@@ -24,11 +24,11 @@ ROOT=$(cat /proc/mounts |grep " / " |awk '{print $1}')
 
 DeviceList="$@"
 if [[ -z $DeviceList ]]; then
-        echo "ERROR: Missing device list"
-        echo
-        echo "Usage: $0 <space_separated_device_list>"
-        echo
-        exit
+  echo "ERROR: Missing device list"
+  echo
+  echo "Usage: $0 <space_separated_device_list>"
+  echo
+  exit
 fi
 
 clear
@@ -128,7 +128,7 @@ do
 #  dd if=$device bs=512 count=33 status=none skip=$((`blockdev --getsz $device` - 33)) | hexdump -C | indent
 #  echo
 
-  # 1- wipe the front of each partition
+  # 1- Wipe the front of each partition
   # Does the device have partitions?
   PARTCOUNT=$(grep -c "${device/\/dev\//}[0-9]" /proc/partitions)
   echo " Number of Partitions: $PARTCOUNT on $device"
@@ -147,24 +147,24 @@ do
     echo
   fi
 
-  # 2 -Wipe front of the drive.
+  # Wipe front of the drive.
   echo " Wiping partition table on: $device"
   dd if=/dev/zero of=$device bs=512 count=34 oflag=direct &> >(sed 's/^/  /')
   sleep 1
   echo 
 
-  # 3 -Wipe end of the drive:
+  # Wipe end of the drive:
   echo " Wiping backup partition table on: $device"
   dd if=/dev/zero of=$device bs=512 count=33 seek=$((`blockdev --getsz $device` - 33)) oflag=direct &> >(sed 's/^/  /')
   sleep 1
   echo
 
-  # 4 -Creating new partition table on the drive.
+  # Creating new partition table on the drive.
   echo " Creating new partition table on: $device"
   sgdisk -Z --clear -g $device | indent
   echo 
 
-  # 5 -Verifing:
+  # Verify:
 #  echo " Displaying new partition table on: $device"
 #  echo " ======================================"
 #  dd if=$device bs=512 count=34 status=none | hexdump -C | indent
