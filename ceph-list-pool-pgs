@@ -1,7 +1,15 @@
 #!/bin/bash
-
+########################################################################################
+# SUSE Enterprise Storage 5, Script to list pools and pg/pgp values.
+SVER='1.00-000'
+SDATE="2019 04 09"
+#
+# Description:
 # Simple script to list pools and pg/pgp values.
 # Run on the admin node.
+#
+######################################################################################## 
+
 
 LIST=$(ceph osd lspools | sed 's/[0-9]*//g' | sed 's/,*//g')
 #echo $LIST
