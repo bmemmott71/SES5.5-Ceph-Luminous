@@ -1,0 +1,179 @@
+#!/bin/bash
+########################################################################################
+# SUSE Enterprise Storage 5, Script to wipe osd devices of partitions and partition table
+SVER='1.00-008'
+SDATE="2019 03 19"
+#
+# Description: 
+# This script is intended to wipe partition data from drives that are intended to be 
+# redeployed as osd disks or journaling devices. Devices that may need to be wiped are 
+# traditional hard drives, SSD drives, and NVMe's.
+#
+# Caution:
+# This script is distructive. It is the user's resposiblity to ensure the correct disks
+# are wiped
+#
+# Sample list of devices that WILL be wiped:
+# "/dev/nvme0n1 /dev/nvme1n1 /dev/sda /dev/sdb /dev/sdc"
+######################################################################################## 
+
+indent() { sed 's/^/  /'; }
+STOP=0
+BOOT=$(cat /proc/mounts |grep /boot |awk '{print $1}')
+ROOT=$(cat /proc/mounts |grep " / " |awk '{print $1}')
+
+DeviceList="$@"
+if [[ -z $DeviceList ]]; then
+        echo "ERROR: Missing device list"
+        echo
+        echo "Usage: $0 <space_separated_device_list>"
+        echo
+        exit
+fi
+
+clear
+echo ""
+echo " version: $SVER"
+echo " Date: $SDATE"
+echo ""
+echo " ======================================"
+echo " Warning: This script is destructive!"
+echo " Use with caution and at your own risk!"
+echo " Do NOT wipe boot/root devices!"
+echo " Device by kernel names are not persistent and may change on reboot"
+echo ""
+echo " Verify if boot/root are:"
+echo "   Boot Device: $BOOT"
+echo "   Root Device: $ROOT"
+if [[ "$ROOT" = *"mapper"* ]]; then 
+  lvs -o +devices
+fi
+echo ""
+read -p " Press [Enter] key to continue..."
+echo ""
+echo " ======================================"
+#echo " == $DeviceList =="
+echo " Removing trailing slashes from paths"
+DeviceList=$(echo ${@%/})
+#echo " == $DeviceList =="
+echo " List of devices to be wiped:"
+for device in ${DeviceList}
+do
+  lsblk -o name,size,type,mountpoint -n $device | indent
+  echo ""
+done
+
+CHECKING=1
+while (( $CHECKING ))
+do
+  printf " Is the list of devices correct? [yN] "
+  read ANS
+  case $ANS in
+    y*|Y* ) CHECKING=0;;
+    * ) exit 0;;
+  esac
+done
+
+echo " ======================================"
+echo " Checking if the device is still mounted:"
+
+for device in ${DeviceList}
+do
+  TEST1="$(mount | grep $device)"
+  if [[ "$TEST1" !=  "" ]]; then
+    echo "  $TEST1"
+    STOP="1"
+  fi
+done
+
+if [[ "$STOP" = "1" ]]; then
+  echo ""
+  echo " Devices are still mounted. Exiting..."
+  echo " run salt-run remove.osd <ID> to remove the osd."
+  echo " Stop osd servcies 'systemctl stop ceph-osd@<ID>"
+  echo " Then umount devices before proceeding"
+  echo ""	
+  exit 1
+fi
+#debug time to exit.
+#echo "===debug, time to exit.==="
+#exit 0
+
+#==================================================
+# Time to wipe disks. version II
+for device in ${DeviceList}
+do
+  echo ""
+  echo " ========== Device: $device =========="
+  CHECKING=1
+  while (( $CHECKING ))
+  do
+    lsblk -o name,size,type,mountpoint -n $device | indent
+    printf " Are you sure you want to wipe: $device ? [yN] "
+    read ANS
+    case $ANS in
+      y*|Y* ) CHECKING=0;;
+      * ) exit 0;;
+    esac
+  done
+
+#  0 -Displaying partition tables.
+#  echo
+#  echo " Displaying partition table on: $device"
+#  echo " ======================================"
+#  dd if=$device bs=512 count=34 status=none | hexdump -C | indent
+#  echo
+#  echo " Displaying backup partition table on: $device"
+#  echo " ======================================"
+#  dd if=$device bs=512 count=33 status=none skip=$((`blockdev --getsz $device` - 33)) | hexdump -C | indent
+#  echo
+
+  # 1- wipe the front of each partition
+  # Does the device have partitions?
+  PARTCOUNT=$(grep -c "${device/\/dev\//}[0-9]" /proc/partitions)
+  echo " Number of Partitions: $PARTCOUNT on $device"
+  if [[ "$PARTCOUNT" != "0" ]]; then
+    echo " Partititons !=0, Wiping beginning of each partition"
+    for partition in ${device}[0-9]*
+    do
+      # 4096*10000=40MB
+      echo " Wiping Partition # $partition ."
+      dd if=/dev/zero of=$partition bs=4096 count=10000 oflag=direct &> >(sed 's/^/  /')
+      echo
+      sleep 1
+    done
+  else
+    echo " No partitions on: $device" 
+    echo
+  fi
+
+  # 2 -Wipe front of the drive.
+  echo " Wiping partition table on: $device"
+  dd if=/dev/zero of=$device bs=512 count=34 oflag=direct &> >(sed 's/^/  /')
+  sleep 1
+  echo 
+
+  # 3 -Wipe end of the drive:
+  echo " Wiping backup partition table on: $device"
+  dd if=/dev/zero of=$device bs=512 count=33 seek=$((`blockdev --getsz $device` - 33)) oflag=direct &> >(sed 's/^/  /')
+  sleep 1
+  echo
+
+  # 4 -Creating new partition table on the drive.
+  echo " Creating new partition table on: $device"
+  sgdisk -Z --clear -g $device | indent
+  echo 
+
+  # 5 -Verifing:
+#  echo " Displaying new partition table on: $device"
+#  echo " ======================================"
+#  dd if=$device bs=512 count=34 status=none | hexdump -C | indent
+#  echo
+#  echo " Displaying backup partition table on: $device"
+#  echo " ======================================"
+#  dd if=$device bs=512 count=33 status=none skip=$((`blockdev --getsz $device` - 33)) | hexdump -C | indent
+
+done
+echo 
+echo " Done wiping devices."
+echo 
