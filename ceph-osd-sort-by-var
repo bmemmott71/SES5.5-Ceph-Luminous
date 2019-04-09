@@ -1,0 +1,5 @@
+
+
+# ceph osd df | grep hdd | sort -rk9 | head -n15
+
+ceph osd df | (read -r; printf "%s\n" "$REPLY"; sort -nrk9) | head -n 20
