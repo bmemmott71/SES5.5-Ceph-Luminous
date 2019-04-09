@@ -1,4 +1,14 @@
+#!/bin/bash
+########################################################################################
+# SUSE Enterprise Storage 5, Script to wipe osd devices of partitions and partition table
+SVER='1.00-000'
+SDATE="2019 04 09"
+#
+# Description:
+# This scrip will list pools, assigned rules and assigned buckets.
 # Useful when crush map as multipule buckets. ie "root default", etc...
-# list pools, assigned rules and assigned buckets.
+#
+# Run on the admin node.
+######################################################################################## 
 
 printf "%-25s %-25s %-25s\n" "Pool" "Crush Rule" "Root Bucket"; for POOL in $(ceph osd pool ls); do RULE=$(ceph osd pool get $POOL crush_rule | cut -d " " -f2); BUCKET=$(ceph osd crush rule dump $RULE | grep item_name | cut -d " " -f14); printf "%-25s %-25s %-25s\n" "$POOL" "$RULE" "$BUCKET"; done
