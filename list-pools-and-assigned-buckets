@@ -1,0 +1,1 @@
+printf "%-25s %-25s %-25s\n" "Pool" "Crush Rule" "Root Bucket"; for POOL in $(ceph osd pool ls); do RULE=$(ceph osd pool get $POOL crush_rule | cut -d " " -f2); BUCKET=$(ceph osd crush rule dump $RULE | grep item_name | cut -d " " -f14); printf "%-25s %-25s %-25s\n" "$POOL" "$RULE" "$BUCKET"; done
