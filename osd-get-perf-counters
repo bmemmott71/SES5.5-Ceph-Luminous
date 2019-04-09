@@ -1,0 +1,93 @@
+#!/bin/bash
+########################################################################################
+# SUSE Enterprise Storage 5, Script to get osd perf counters
+SVER='1.00-003'
+SDATE="2019 02 20"
+#
+# Description: 
+# Script to get osd perf counters as a troubleshooting method.
+# 
+# "Usage: $0 <space_separated_osdID_list>"
+#
+# Script will get osd perf counters, sleep 2m, then get osd perf counters, then tar up.
+#
+######################################################################################## 
+# Change Log:
+# 20190220 -script now creates a *.tgz file with log files in /var/log/
+
+##############################################################################
+# Default Options 
+##############################################################################
+MyLongName=$(basename $BASH_SOURCE)
+MyName=$(echo $MyLongName | cut -f 1 -d '.')
+LOG_PATH="/var/log"
+TIME=$(date '+%y%m%d-%H%M%S')
+TIMESTAMP=""
+STARTTIME=$TIME
+DIR_NAME=$"$MyName-$HOSTNAME-$TIME"
+LONG_LOG_PATH=$"$LOG_PATH/$DIR_NAME"
+DLONG_LOG_PATH=$"$LOG_PATH/$DIR_NAME/$DIR_NAME"
+TAR_NAME=$"$MyName-$HOSTNAME-$TIME.tgz"
+
+##############################################################################
+#  Main 
+##############################################################################
+# Parse command line parameters 
+##############################################################################
+DeviceList="$@"
+if [[ -z $DeviceList ]]; then
+        echo "ERROR: Missing osdID list"
+        echo
+        echo "Usage: $0 <space_separated_osdID_list>"
+        echo
+        exit
+fi
+##############################################################################
+# Create a subdirectory to place the files in.  /var/log/(ScrptName+TimeStamp)
+##############################################################################
+echo " Creating temp subdirectory: $DLONG_LOG_PATH." 
+mkdir -p $DLONG_LOG_PATH
+
+DateTime=$(date +%Y%m%d-%H%M%S)
+echo "== $DateTime =="
+#exit
+
+##############################################################################
+# Gather logs
+##############################################################################
+for i in ${DeviceList}
+do 
+  echo "Gathering logs for: $i "
+  echo "getting perf counters for: $i "
+  ceph --admin-daemon /var/run/ceph/ceph-osd.$i.asok dump_historic_ops_by_duration > $DLONG_LOG_PATH/$DateTime-$HOSTNAME-osd-$i-dump_historic_ops_by_duration.log
+  ceph --admin-daemon /var/run/ceph/ceph-osd.$i.asok dump_historic_slow_ops > $DLONG_LOG_PATH/$DateTime-$HOSTNAME-osd-$i-dump_historic_slow_ops.log
+  ceph --admin-daemon /var/run/ceph/ceph-osd.$i.asok dump_blocked_ops > $DLONG_LOG_PATH/$DateTime-$HOSTNAME-osd-$i-dump_blocked_ops.log
+  ceph --admin-daemon /var/run/ceph/ceph-osd.$i.asok dump_ops_in_flight > $DLONG_LOG_PATH/$DateTime-$HOSTNAME-osd-$i-dump_ops_in_flight.log
+  ceph --admin-daemon /var/run/ceph/ceph-osd.$i.asok dump_ops_in_flight | grep write > $DLONG_LOG_PATH/$DateTime-$HOSTNAME-osd-$i-dump_ops_in_flight-write.log
+  ceph --admin-daemon /var/run/ceph/ceph-osd.$i.asok perf dump  > $DLONG_LOG_PATH/$DateTime-$HOSTNAME-osd-$i-perf-dump-before-reset.log
+  echo "resetting perf counters for: $i"
+  ceph --admin-daemon /var/run/ceph/ceph-osd.$i.asok perf reset all
+  echo "sleeping 2min.."
+  sleep 2m
+  echo "getting perf counters for: $i "
+  ceph --admin-daemon /var/run/ceph/ceph-osd.$i.asok perf dump  > $DLONG_LOG_PATH/$DateTime-$HOSTNAME-osd-$i-perf-dump-after-reset.log
+  echo
+done
+
+##############################################################################
+# Create tar.gz file with data.
+##############################################################################
+echo " Creating: $LOG_PATH/$TAR_NAME "
+tar zcvfh $LOG_PATH/$TAR_NAME -C $LONG_LOG_PATH . &>/dev/null
+if [ $? == 0 ]; then
+  #echo " $TAR_NAME created successfully!"
+  #echo " Deleting temp subdirectory: $LONG_LOG_PATH "
+  rm -r $LONG_LOG_PATH
+else
+  echo " Failed to create $TAR_NAME."
+  echo " Send the following files $LOG_PATH$DIR_NAME."
+  exit 1
+fi
+echo ""
+echo " Please send the following file:$LOG_PATH/$TAR_NAME "
+exit
