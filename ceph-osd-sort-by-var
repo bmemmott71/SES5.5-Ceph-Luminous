@@ -1,5 +1,21 @@
-
+#!/bin/bash
+########################################################################################
+# SUSE Enterprise Storage 5, Script to list osd's sorted by var value.
+SVER='1.00-000'
+SDATE="2019 04 09"
+#
+# Description:
+# This script will list osd's sorted by var value.
+# It is helpful when identifing osd's that a near-full/full 
+#
+# Run on the admin node.
+#
+# Consider the following commands when needing to push data away from near-full/full osd's.
+#   Test first:
+#     ceph osd test-reweight-by-utilization 110 0.05 20
+#   Then implement:
+#     ceph osd reweight-by-utilization 110 0.05 20
+######################################################################################## 
 
 # ceph osd df | grep hdd | sort -rk9 | head -n15
-
 ceph osd df | (read -r; printf "%s\n" "$REPLY"; sort -nrk9) | head -n 20
