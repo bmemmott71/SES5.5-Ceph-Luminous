@@ -1,0 +1,31 @@
+#!/bin/bash 
+########################################################################################
+# SUSE Enterprise Storage 5, Script to delete salt minion master pub key.
+SVER='1.00-003'
+SDATE="2018 09 22"
+#
+# Description: Script to delete salt minion master pub key.
+######################################################################################## 
+# Change Log:
+# 20180922 -DeviceList="$@"
+#
+USERNAME=root
+#=================================================
+DeviceList="$@"
+if [[ -z $DeviceList ]]; then
+	echo " Script to delete salt minion master pub key."
+	echo " ERROR: Missing Host list"
+	echo
+	echo " Usage: $0 <space_separated_Host_list>"
+	echo
+	exit
+fi
+
+echo " Script to delete salt minion master pub key."
+for HOSTNAME in ${DeviceList} ; do
+  echo "Deleting minion_master.pub and restarting salt-minion.service on $HOSTNAME" 
+  ssh -o StrictHostKeyChecking=no -l ${USERNAME} ${HOSTNAME} "rm /etc/salt/pki/minion/minion_master.pub; systemctl restart salt-minion.service"
+done 
+echo ""
+echo " done...."
+echo " salt-master needs to reimport minion ??"
