@@ -1,0 +1,41 @@
+#!/bin/bash
+########################################################################################
+# SUSE Enterprise Storage 5, Script to get top and iostat data on OSD nodes
+SVER='1.00-002'
+SDATE="2018 09 21"
+#
+# Description: Script to get top and iostat data on OSD nodes
+######################################################################################## 
+# Change Log:
+#
+#
+trap "exit" INT TERM ERR
+trap "kill 0" EXIT
+MYDIR=$(pwd)
+#MYDIR="/root/top-iostat"
+
+#=============
+DateTime=$(date +%Y%m%d-%H%M%S)
+#echo "Logging top & iostat data"
+echo "iostat will run as a background process."
+echo "== $MYDIR =="
+nohup /usr/bin/iostat -xt 1 >> $"$MYDIR/$DateTime-$HOSTNAME-iostat.log" &
+
+while [ : ]
+do
+  echo "Logging top & iostat data"
+  echo "" >> $MYDIR$HOSTNAME-top.log
+  echo $(date +%F_%T) >> $MYDIR$DateTime-$HOSTNAME-top.log
+  /usr/bin/top -b -n 1| head -n 30 >> $"$MYDIR/$DateTime-$HOSTNAME-top.log"
+  #echo "" >> /var/log/$DateTime-$HOSTNAME-iostat.log
+  #echo $(date +%F_%T) >> /var/log/$DateTime-$HOSTNAME-iostat.log
+  #/usr/bin/iostat -xt 5 4 >> /var/log/$DateTime-$HOSTNAME-iostat.log
+  echo "sleeping 30 sec."
+  sleep 30s
+done
+#=============
+
+#./someProcessA &
+#./someProcessB &
+
+#wait
