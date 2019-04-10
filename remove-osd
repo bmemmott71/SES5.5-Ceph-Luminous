@@ -1,0 +1,110 @@
+#!/bin/bash
+########################################################################################
+# SUSE Enterprise Storage 5, remove osd's script
+SVER='1.00-004'
+SDATE="2018 09 23"
+#
+# Description: Runs "salt-run remove.osd" against a list of osd ID's 
+# script will test multipule times to ensure the osd was successfully removed..
+#
+# May not be needed with SES5.5
+######################################################################################## 
+# Change Log:
+#
+#
+echo " version: $SVER"
+echo " Date: $SDATE"
+#=================================================
+DeviceList="$@"
+if [[ -z $DeviceList ]]; then
+	echo " ERROR: Missing osd list"
+	echo
+	echo " Usage: $0 <space_separated_osdID_list>"
+	echo
+	exit
+fi
+
+if echo "$DeviceList" | grep -q "osd"; then
+	echo " $DeviceList"
+	echo " list should contain ID#'s only."
+	exit
+fi
+
+#=================================================
+echo ""
+echo " ======================================"
+echo " List of osd's to be removed from the cluster:"
+echo ""
+for i in ${DeviceList}
+do 
+	NODE=$(ceph osd find 2 | grep host | sed 's/"//g' | sed 's/^[[:space:]]*//' )
+	echo "  $NODE  osd.$i"
+done
+echo ""
+#=================================================
+CHECKING=1
+while (( $CHECKING ))
+do
+	printf " Is the list of osd's correct? [yN] "
+	read ANS
+	case $ANS in
+		y*|Y* ) CHECKING=0;;
+		* ) exit 0;;
+	esac
+done
+#=================================================
+for device in ${DeviceList}
+do
+	echo ""
+	echo " ========== osd: $device =========="
+	salt-run disengage.safety
+	salt-run remove.osd $device
+	#=================================================
+	sleep 2
+	FirstTestString=$(ceph osd tree | grep -w osd.$device)
+	echo " FirstTestString== $FirstTestString =="
+	if echo "$FirstTestString" | grep -q "$device"; then
+		echo " osd.$device is still in the cluster"
+		echo " Attempting to remove again: $device "
+		salt-run disengage.safety
+		salt-run remove.osd $device
+		#=================================================
+		sleep 2
+		SecondTestString=$(ceph osd tree | grep -w osd.$device)
+		echo " SecondTestString== $SecondTestString =="
+		if echo "$SecondTestString" | grep -q "$device"; then
+			echo " osd.$device is still in the cluster"
+			echo " Attempting to remove again: $device "
+			salt-run disengage.safety
+			salt-run remove.osd $device
+			#=================================================
+			sleep 2
+			ThirdTestString=$(ceph osd tree | grep -w osd.$device)
+			echo " ThirdTestString== $ThirdTestString =="
+			if echo "$ThirdTestString" | grep -q "$device"; then
+				echo " osd.$device is still in the cluster"
+				echo " Requires manual intervention to address."
+				echo " time to exit!
+				exit 1
+			else
+				echo " osd.$device is out of the cluster"
+			fi
+		else
+			echo " osd.$device is out of the cluster"
+		fi
+	else
+		echo " osd.$device is out of the cluster"
+	fi 
+done
+#=================================================
+echo ""
+echo " Verfiy the osds were removed from the cluster with: "
+echo " ceph osd tree or ceph osd tree | grep osd.ID#"
+echo ""
+echo " To redeploy the osd's: "
+echo "   first, wipe the osd disks,"
+echo "   second, validate the yml file for the osd"
+echo "   then run:"
+echo "     salt-run state.orch ceph.stage.1"
+echo "     salt-run state.orch ceph.stage.2"
+echo "     salt-run state.orch ceph.stage.3"
