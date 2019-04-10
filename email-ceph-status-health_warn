@@ -1,0 +1,39 @@
+#!/bin/bash
+########################################################################################
+# SUSE Enterprise Storage 5, Script will email user ceph health status.
+SVER='1.00-003'
+SDATE="2019 04 09"
+#
+# Description: 
+# Run the script to monitor the status of ceph health.
+# Requires "mail" to work. 
+#
+# Edit EMAILADDRESS first!
+#
+# Maybe this should be rewritten as a cron job script.
+######################################################################################## 
+# Change Log:
+#
+#
+
+EMAILADDRESS=SomeUser@SomeWhere.something
+
+echo "ceph-mon running...."
+while [ : ]; do
+  STATE=$(ceph -s | grep health: | xargs | cut -d " " -f2-)
+  #STATEDETAIL=$(ceph health)
+  STATEDETAIL=$(ceph -s)
+  I=$(date +"%Y-%m-%d %H:%M:%S")
+  if [ "$STATE" = "HEALTH_OK" ]; then
+    echo "$I : HEALTH_OK"
+  fi
+  if [ "$STATE" = "HEALTH_WARN" ]; then
+    echo "$I : HEALTH_WARN"
+    echo "$STATEDETAIL" | mail -s "$I : ceph -s health: HEALTH_WARN" $EMAILADDRESS
+  fi
+  if [ "$STATE" = "HEALTH_ERR" ]; then
+    echo "$I : HEALTH_ERR"
+    echo "$STATEDETAIL" | mail -s "$I : ceph -s health: HEALTH_ERR" $EMAILADDRESS
+  fi
+  sleep 5m
+done
