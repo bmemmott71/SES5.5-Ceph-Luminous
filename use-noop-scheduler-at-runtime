@@ -1,0 +1,18 @@
+#!/bin/bash
+########################################################################################
+# SUSE Enterprise Storage 5, Script to change scheduler to noop at runtime.
+SVER='1.00-002'
+SDATE="2018 09 21"
+#
+# Description: Use this script to change scheduler to noop at runtime.
+######################################################################################## 
+# Change Log:
+#
+#for i in $(ls -1 /sys/block);
+do
+echo "== $i =="
+#exit
+ echo "noop" > /sys/block/$i/queue/scheduler
+done
+echo "cat /sys/block/*/queue/scheduler"
+cat /sys/block/*/queue/scheduler
