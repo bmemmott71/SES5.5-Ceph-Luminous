@@ -1,0 +1,53 @@
+#!/bin/bash 
+########################################################################################
+# SUSE Enterprise Storage 5, Script to share ssh-key
+SVER='1.00-003'
+SDATE="2019 04 09"
+#
+# Description: Script to share ssh-key, It will create the key if it does not exist.
+
+# Edit AdminDnsName & SESNodes
+######################################################################################## 
+# Change Log:
+
+AdminDnsName=hostX
+SESNodes="host1 host2 host3"
+USERNAME=root
+
+#++++++
+#===========================
+# test to see if SSH key exists.
+echo " Sharing ssh-key with other nodes."
+echo " This will test connectivity and DNS names of all other nodes. "
+echo
+# echo "--$HOME--"
+if [ ! -d "$HOME/.ssh" ]; then
+  #echo "N"
+  if [ ! -f "$HOME/.ssh/id_rsa" ]; then
+    #echo "NN"
+    echo " ssh key does NOT exist, creating one now."
+    ssh-keygen -f $HOME/.ssh/id_rsa -t rsa -N ''
+  else
+    echo " ssh key already exits."
+  fi
+else
+  #echo "Y"
+  if [ ! -f "$HOME/.ssh/id_rsa" ]; then
+    #echo "YN"
+    echo " ssh key does NOT exist, creating one now."
+    ssh-keygen -f $HOME/.ssh/id_rsa -t rsa -N ''
+  else
+    echo " ssh key already exits."
+  fi
+fi
+echo " Copying ssh key to nodes. "
+for HOSTNAME in ${SESNodes} ; do
+  if [ "$HOSTNAME" = "$AdminDnsName" ]; then
+    echo " Skiping: $HOSTNAME "
+  else
+    echo " Copying ssh key to $HOSTNAME "
+    ssh-copy-id -o StrictHostKeyChecking=no -i $HOME/.ssh/id_rsa.pub ${USERNAME}@${HOSTNAME}
+  fi
+done
+echo ""
+echo " done...." 
