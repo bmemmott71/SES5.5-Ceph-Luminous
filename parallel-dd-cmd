@@ -1,0 +1,30 @@
+#!/bin/bash
+########################################
+# Script to test troughput using "parallel" and "dd"
+#
+# There is a SOURCE & TARGET, 
+# In this example, the source are local files or files available via a nfs mount,
+# the target is a cephfs filesystem.
+#
+# JOBS is the number of jobs "parallel" will run.
+#
+# BLOCKSZ is the block size used by cephfs.
+#
+# Note:
+# In this case the number of files and size of the files located at the SOURCE, 
+# will impact the outcome of this test. Its best to have a Multipule of  JOB,
+# with file size being the same. Example 16 or 32 files each being 4 or 8GB in size.
+
+SOURCE="/mnt/SourceDir"
+TARGET="/mnt/cephfs_erasure/rclone"
+JOBS=8
+BLOCKSZ="4M"
+#BLOCKSZ="128K"
+
+cd $SOURCE
+
+time find . -type f | parallel -j$JOBS dd if={} of="$TARGET/{}" bs=$BLOCKSZ oflag=direct ::: *
+#time find . -type f | parallel -j$JOBS dd if={} of="$TARGET/{}" bs=$BLOCKSZ ::: *
+#time parallel -j$JOBS cp -r {} $TARGET/ ::: *
+
+cd -
