@@ -1,0 +1,32 @@
+#!/bin/bash 
+########################################################################################
+# SUSE Enterprise Storage 5, Script to restart salt minions
+SVER='1.00-003'
+SDATE="2018 09 22"
+#
+# Description: Script to restart salt minions
+#
+# Asumes user is "root"
+######################################################################################## 
+# Change Log:
+# 2018 09 22 added DeviceList="$@"
+#
+USERNAME=root
+
+DeviceList="$@"
+if [[ -z $DeviceList ]]; then
+	echo " Script to restart salt-minion.service on list of hosts as user root."
+	echo " ERROR: Missing Host list"
+	echo
+	echo " Usage: $0 <space_separated_Host_list>"
+	echo
+	exit
+fi
+
+echo " Script to restart salt-minion.service on list of hosts as user root."
+for HOSTNAME in ${DeviceList} ; do
+  echo " Restarting salt-minion.service on $HOSTNAME" 
+  ssh -o StrictHostKeyChecking=no -l ${USERNAME} ${HOSTNAME} "systemctl restart salt-minion.service"
+done 
+echo ""
+echo " done...." 
