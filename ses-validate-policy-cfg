@@ -1,0 +1,35 @@
+#!/bin/bash
+########################################################################################
+# SUSE Enterprise Storage 5, Script to help validate correct globbing of policy.cfg
+SVER='1.00-002'
+SDATE="2018 09 21"
+#
+# Description: Use this script to help validate correct globbing of policy.cfg
+#              Also requires "mail" to work. 
+######################################################################################## 
+# Change Log:
+#
+#
+# https://unix.stackexchange.com/questions/256144/read-a-file-line-by-line-and-if-condition-is-met-continue-reading-till-next-cond
+clear
+echo ""
+echo "  Use this script to help validate correct globbing of policy.cfg"
+echo "  The script will read each line of the policy.cfg,"
+echo "  then run ls -al and output to screen"
+echo "  It is up to you, the admin to ensure globbing is correct."
+echo ""
+echo ""
+read -p "  Press enter to continue"
+
+filename="/srv/pillar/ceph/proposals/policy.cfg"
+BASEPATH="/srv/pillar/ceph/proposals/"
+readarray -t lines <<< "$(sed -e '/^#/d;/^$/d' "$filename")"
+clear
+for line in "${lines[@]}"; do
+  echo "#===  $line"
+  [[ $line == cluster-ceph* ]] && ls -al $BASEPATH$line 
+  [[ $line == config* ]] && ls -al $BASEPATH$line
+  [[ $line == role* ]] && ls -al $BASEPATH$line
+  [[ $line == profile* ]] && ls -al $BASEPATH$line
+  echo""
+done
