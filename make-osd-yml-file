@@ -1,0 +1,125 @@
+#!/bin/bash
+SVER='1.00-001'
+SDATE="2018 09 27"
+##############################################################################
+# changes:
+#
+#
+#
+##############################################################################
+# Default Options
+##############################################################################
+MyLongName=$(basename $BASH_SOURCE)
+MyName=$(echo $MyLongName | cut -f 1 -d '.')
+LOG_PATH="/var/log"
+TIME=$(date '+%y%m%d-%H%M%S')
+STARTTIME=$TIME
+DIR_NAME=$"$MyName-$HOSTNAME-$TIME"
+LONG_LOG_PATH=$"$LOG_PATH/$DIR_NAME"
+DLONG_LOG_PATH=$"$LOG_PATH/$DIR_NAME/$DIR_NAME"
+TAR_NAME=$"$MyName-$HOSTNAME-$TIME.tgz"
+
+# This script is intended to create a template yml file with journaling.
+# are intended to be redeployed as osd disks or journaling devices.
+##############################################################################
+# General Function Definitions
+##############################################################################
+title() {
+        echo "============================================================================="
+        echo "    Script Name: - $MyLongName"
+        echo "    Script Version: $SVER"
+        echo "    Script Date: $SDATE"
+        echo
+        echo " This script is used to create a simple osd yml file with a journaling device."
+        echo "============================================================================="
+        echo
+}
+
+show_help() {
+  log2sys "Show Help Screen"
+  echo " Usage: $MyName [OPTION [OPTION ...]]"
+  echo
+  echo " -h This screen"
+  echo
+  echo " -d Specify db_size."
+  echo "    example: -d 3G "
+  echo
+  echo " -w Specify wal_size."
+  echo "    example: -w 35G "
+  echo
+  echo " -j Specify journaling device."
+  echo "    example: -j scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-0-0-0"
+  echo
+  echo "    Use: fdisk -l or lslbk to locate the correct journaling device."
+  echo '    Use: "ll /dev/disk/by-id/scsi-*", to pick the correct device label.'
+  echo
+  echo " -o Specify osd device label."
+  echo '    example: -o "/dev/disk/by-id/scsi-*"'
+  echo
+  echo '    Use: "ll /dev/disk/by-id/scsi-*", to pick the correct device label.'
+  echo '    ie "scsi-3*" may be the best choice of device label.'
+  echo
+  echo './make-osd-yml-file.sh -d 2G -w 50G -j scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-0-0-0 -o "/dev/disk/by-id/scsi-*"'
+  echo
+}
+
+log2sys() {
+        MSG="$@"
+        if (( $VAR_OPTION_DMESG )); then
+                echo "supportconfig: [$(date +%y%m%d:%H:%M:%S)] $MSG" > /dev/kmsg
+        else
+                logger -t supportconfig "$MSG"
+        fi
+}
+
+exit_code() {
+        XC=$1
+        shift
+        MSG="$@"
+        [ -n "$MSG" ] && log2sys "$MSG"
+        log2sys "END"
+        exit $XC
+}
+
+while getopts hj:o:d:w: option
+do
+ case "${option}"
+ in
+ h) title; show_help; exit_code 0 ;;
+ j) JOURNALING_DEV=${OPTARG};;
+ o) OSD_LIST=${OPTARG};;
+ d) DB_SIZE=${OPTARG};;
+ w) WAL_SIZE=${OPTARG};;
+ esac
+done
+
+echo "Journaling device: "$JOURNALING_DEV
+echo "osd list: "$OSD_LIST
+echo "db_size= "$DB_SIZE
+echo "wal_size= "$WAL_SIZE
+
+CompleteList=$(ls -lt $OSD_LIST | grep -v "part"| cut -d " " -f10)
+echo "osd list: "$CompleteList
+
+echo "ceph:" >> /root/MyTest.yml
+echo "  storage:" >> /root/MyTest.yml
+echo "    osds:" >> /root/MyTest.yml
+for i in $CompleteList
+do
+  #echo "i: "$i
+  #echo "j: "$JOURNALING_DEV
+  if echo "$i" | grep -q "$JOURNALING_DEV"; then
+    echo "skipping: " $i
+    echo "it's the Journaling device."
+    echo
+  else
+    echo "processing: "$i
+    echo
+    echo "      $i:" >> /root/MyTest.yml
+    echo "        format: bluestore" >> /root/MyTest.yml
+    echo "        wal: $JOURNALING_DEV" >> /root/MyTest.yml
+    echo "        wal_size: $WAL_SIZE" >> /root/MyTest.yml
+    echo "        db: $JOURNALING_DEV" >> /root/MyTest.yml
+    echo "        db_size: $DB_SIZE" >> /root/MyTest.yml
+  fi
+done
