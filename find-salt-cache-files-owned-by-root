@@ -1,0 +1,17 @@
+#!/bin/bash
+########################################################################################
+# SUSE Enterprise Storage 5, find salt caches files owned by root.
+SVER='1.00-002'
+SDATE="2018 09 21"
+#
+# Description: Run the script to identify salt caches files owned by root.
+######################################################################################## 
+# Change Log:
+#
+#
+echo "Mining /var/cache/salt/master/jobs for root ownership."
+
+find \/var\/cache\/salt\/master\/jobs -group root |while read fname; do 
+  ls -l $fname
+  #ls -l $fname | grep "Sep  5"
+done
