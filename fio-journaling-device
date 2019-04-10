@@ -1,0 +1,54 @@
+#!/bin/bash
+########################################################################################
+# SUSE Enterprise Storage 5, Script to run fio against a osd journaling device.
+# Author: Boyd Memmott <boyd.memmott@suse.com>
+SVER='1.00-002'
+SDATE="2018 09 21"
+#
+# Description: Script to run fio against a osd journaling device.
+######################################################################################## 
+# Change Log:
+#
+#
+trap "exit" INT TERM ERR
+trap "kill 0" EXIT
+MYDIR=$(pwd)
+#MYDIR="/root/top-iostat"
+
+
+echo "Requires raw.fio in the current directory. "
+# bmemmott10:~/fio # cat raw.fio
+# [global]
+# #size=1073741824
+# direct=1
+# ioengine=libaio
+# #nrfiles=16
+# #fallocate=none
+# filename=/dev/sdf1
+# runtime=60
+
+# [backup]
+# rw=randrw
+# rwmixread=10
+# #bs=4M
+# iodepth=32
+# numjobs=8
+
+# echo "Also run 'iostat -xt 1 >> /somewhere/iostat.log' in parallel with this script."
+
+#=============
+DateTime=$(date +%Y%m%d-%H%M%S)
+#echo "Logging top & iostat data"
+echo "iostat will run as a background process."
+echo "== $MYDIR =="
+nohup /usr/bin/iostat -xt 1 >> $"$MYDIR/$DateTime-$HOSTNAME-iostat.log" &
+
+#LIST=$(4k 16k 4m)
+for i in 4k 16k 4M; do
+  echo "== Block size=$i =="
+  fio raw.fio --bs=$i --write_bw_log=$i.out --log_avg_msec=1000 --output=$i.out
+  echo "== $i fdatasync=1 =="
+  fio raw.fio --bs=$i --write_bw_log=$i.2.out --log_avg_msec=1000 --output=$i.2.out --fdatasync=1
+  echo "======= DONE ======="
+done
+echo "==== FINAL DONE ===="
