@@ -1,0 +1,82 @@
+#!/bin/bash
+########################################################################################
+# SUSE Enterprise Storage 5, Script to view gpt partition table information.
+SVER='1.00-000'
+SDATE="2019 04 09"
+#
+# Description: 
+# This Script will display the gpt partition table with hexdump.
+# GPT will create a primary partition table at the beginning of the disk and a backup 
+# copy of the partition table at the end of the disk. If the primary partition table 
+# gets corrupt, GPT will use the the backup copy to recover from the corruption.
+#
+# Sample list of devices:
+# "/dev/nvme0n1 /dev/nvme1n1 /dev/sda /dev/sdb /dev/sdc"
+#
+# dd if=$device bs=512 count=34 status=none | hexdump -C | indent
+# dd if=$device bs=512 count=33 status=none skip=$((`blockdev --getsz $device` - 33)) | hexdump -C | indent
+######################################################################################## 
+
+indent() { sed 's/^/  /'; }
+STOP=0
+BOOT=$(cat /proc/mounts |grep /boot |awk '{print $1}')
+ROOT=$(cat /proc/mounts |grep " / " |awk '{print $1}')
+
+DeviceList="$@"
+if [[ -z $DeviceList ]]; then
+  echo "ERROR: Missing device list"
+  echo
+  echo "Usage: $0 <space_separated_device_list>"
+  echo
+  exit
+fi
+
+clear
+echo ""
+echo " version: $SVER"
+echo " Date: $SDATE"
+echo ""
+echo " ======================================"
+echo " This Script will display the gpt partition table information."
+echo ""
+read -p " Press [Enter] key to continue..."
+echo ""
+echo " ======================================"
+DeviceList=$(echo ${@%/})
+echo " List of devices:"
+
+CHECKING=1
+while (( $CHECKING ))
+do
+  printf " Is the list of devices correct? [yN] "
+  read ANS
+  case $ANS in
+    y*|Y* ) CHECKING=0;;
+    * ) exit 0;;
+  esac
+done
+
+#==================================================
+for device in ${DeviceList}
+do
+  echo ""
+  echo " ========== Device: $device =========="
+  CHECKING=1
+  while (( $CHECKING ))
+  do
+    lsblk -o name,size,type,mountpoint -n $device | indent
+    printf " Are you sure you want to display partition information for: $device ? [yN] "
+    read ANS
+    case $ANS in
+      y*|Y* ) CHECKING=0;;
+      * ) exit 0;;
+    esac
+  done
+  echo " Displaying new partition table on: $device"
+  echo " ======================================"
+  dd if=$device bs=512 count=34 status=none | hexdump -C | indent
+  echo
+  echo " Displaying backup partition table on: $device"
+  echo " ======================================"
+  dd if=$device bs=512 count=33 status=none skip=$((`blockdev --getsz $device` - 33)) | hexdump -C | indent
+done
