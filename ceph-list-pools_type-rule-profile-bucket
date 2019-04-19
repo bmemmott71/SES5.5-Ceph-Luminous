@@ -3,18 +3,20 @@ ECPROFILE=""
 K=""
 M=""
 echo ""
-printf "%-20s %-6s %-10s %-17s %-17s %-8s %-15s\n" "Pool" "S/M_S" "PG/PGP" "Crush Rule" "EC Profile" "K/M" "Root Bucket"
-for POOL in $(ceph osd pool ls); do 
+printf "%-20s %-6s %-10s %-17s %-17s %-8s %-10s %-15s\n" "Pool" "S/M_S" "PG/PGP" "Crush Rule" "EC Profile" "K/M" "APP" "Root Bucket"
+for POOL in $(ceph osd pool ls); do
   SIZE=$(ceph osd pool get $POOL size | cut -d " " -f2)
   MSIZE=$(ceph osd pool get $POOL min_size | cut -d " " -f2)
-  PG=$(ceph osd pool get $POOL pg_num | cut -d " " -f2);
-  PGP=$(ceph osd pool get $POOL pgp_num | cut -d " " -f2);
+  PG=$(ceph osd pool get $POOL pg_num | cut -d " " -f2)
+  PGP=$(ceph osd pool get $POOL pgp_num | cut -d " " -f2)
   RULE=$(ceph osd pool get $POOL crush_rule | cut -d " " -f2)
-  if [ $(ceph osd crush rule dump $RULE | grep type | cut -d " " -f6 | rev | cut -c 2- | rev) = 3 ]; then 
+  if [ $(ceph osd crush rule dump $RULE | grep type | cut -d " " -f6 | rev | cut -c 2- | rev) = 3 ]; then
     ECPROFILE=$(ceph osd pool get $RULE erasure_code_profile | cut -d " " -f2)
     K=$(ceph osd erasure-code-profile get $ECPROFILE | grep k=)
     M=$(ceph osd erasure-code-profile get $ECPROFILE | grep m=)
   fi
-  BUCKET=$(ceph osd crush rule dump $RULE | grep item_name | cut -d " " -f14)
-  printf "%-20s %-6s %-10s %-17s %-17s %-8s %-15s\n" "$POOL" "$SIZE/$MSIZE" "$PG/$PGP" "$RULE" "$ECPROFILE" "$K $M" "$BUCKET"
+  APP=$(ceph osd pool application get iscsi-images | tail -n +2 | head -n1 | sed 's/[^a-zA-Z0-9]//g')
+  BUCKET=$(ceph osd crush rule dump $RULE | grep item_name | cut -d " " -f14 | sed 's/[^a-zA-Z0-9~]//g')
+  printf "%-20s %-6s %-10s %-17s %-17s %-8s %-10s %-15s\n" "$POOL" "$SIZE/$MSIZE" "$PG/$PGP" "$RULE" "$ECPROFILE" "$K $M" "$APP" "$BUCKET"
 done
+
