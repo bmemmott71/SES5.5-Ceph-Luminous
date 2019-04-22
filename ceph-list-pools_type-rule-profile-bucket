@@ -3,7 +3,7 @@ ECPROFILE=""
 K=""
 M=""
 echo ""
-printf "%-20s %-6s %-10s %-17s %-17s %-8s %-10s %-15s\n" "Pool" "S/M_S" "PG/PGP" "Crush Rule" "EC Profile" "K/M" "APP" "Root Bucket"
+printf "%-20s %-8s %-9s %-16s %-16s %-8s %-8s %-15s\n" "Pool" "Size/Min" "PG/PGP" "Crush Rule" "EC Profile" "K/M" "APP" "Root Bucket"
 
 POOLLIST=$(ceph osd pool ls)
 for POOL in $POOLLIST; do
@@ -13,26 +13,15 @@ for POOL in $POOLLIST; do
   PG=$(echo $POOLINFO  | cut -d " " -f8)
   PGP=$(echo $POOLINFO  | cut -d " " -f10)
   RULE=$(echo $POOLINFO  | cut -d " " -f12)
-
-#  SIZE=$(ceph osd pool get $POOL size | cut -d " " -f2)
-#  MSIZE=$(ceph osd pool get $POOL min_size | cut -d " " -f2)
-#  PG=$(ceph osd pool get $POOL pg_num | cut -d " " -f2)
-#  PGP=$(ceph osd pool get $POOL pgp_num | cut -d " " -f2)
-#  RULE=$(ceph osd pool get $POOL crush_rule | cut -d " " -f2)
-
+  ECPROFILE=$(echo $POOLINFO  | cut -d " " -f34)
   RULEINFO=$(ceph osd crush rule dump $RULE)
-  #echo $RULEINFO
   RULETYPE=$(echo $RULEINFO | cut -d " " -f9 | sed 's/[^a-zA-Z0-9]//g')
-  #echo $RULETYPE
-
   if [ $RULETYPE = 3 ]; then
-    ECPROFILE=$(ceph osd pool get $RULE erasure_code_profile | cut -d " " -f2)
-    K=$(ceph osd erasure-code-profile get $ECPROFILE | grep k=)
-    M=$(ceph osd erasure-code-profile get $ECPROFILE | grep m=)
+    PROFILEINFO=$(ceph osd erasure-code-profile get $ECPROFILE)
+    K=$(echo $PROFILEINFO | cut -d " " -f5)
+    M=$(echo $PROFILEINFO | cut -d " " -f6)
   fi
   APP=$(ceph osd pool application get iscsi-images | tail -n +2 | head -n1 | sed 's/[^a-zA-Z0-9]//g')
   BUCKET=$(ceph osd crush rule dump $RULE | grep item_name | cut -d " " -f14 | sed 's/[^a-zA-Z0-9~]//g')
-  printf "%-20s %-6s %-10s %-17s %-17s %-8s %-10s %-15s\n" "$POOL" "$SIZE/$MSIZE" "$PG/$PGP" "$RULE" "$ECPROFILE" "$K $M" "$APP" "$BUCKET"
+  printf "%-20s %-8s %-9s %-16s %-16s %-8s %-8s %-15s\n" "$POOL" "$SIZE/$MSIZE" "$PG/$PGP" "$RULE" "$ECPROFILE" "$K $M" "$APP" "$BUCKET"
 done
-
-
