@@ -1,7 +1,4 @@
 #!/bin/bash
-ECPROFILE=""
-K=""
-M=""
 echo ""
 printf "%-20s %-8s %-9s %-16s %-16s %-8s %-8s %-15s\n" "Pool" "Size/Min" "PG/PGP" "Crush Rule" "EC Profile" "K/M" "APP" "Root Bucket"
 
