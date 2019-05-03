@@ -122,21 +122,22 @@ do
     echo "processing: "$i
     echo "      $i:" >> /root/MyTest.yml
     echo "        format: bluestore" >> /root/MyTest.yml
-    #Check if variable is NOT null (-n)
-    #Check if variable is null (-z)
-    if [ -n "$JOURNALING_DEV" ]; then
+    #Check if variable is NOT null (-n) "if [ -n "$VAR" ]; then"
+    #  or  "if [ “$VAR” ]; then"
+    #Check if variable is null (-z) "if [ -z "$VAR" ]; then"
+    if [ "$JOURNALING_DEV" ]; then
       echo "        wal: $JOURNALING_DEV" >> /root/MyTest.yml
     fi
 
-    if [ -n "$WAL_SIZE" ]; then
+    if [ "$WAL_SIZE" ]; then
       echo "        wal_size: $WAL_SIZE" >> /root/MyTest.yml
     fi
 
-    if [ -n "$JOURNALING_DEV" ]; then
+    if [ "$JOURNALING_DEV" ]; then
       echo "        db: $JOURNALING_DEV" >> /root/MyTest.yml
     fi
 
-    if [ -n "$DB_SIZE" ]; then
+    if [ "$DB_SIZE" ]; then
       echo "        db_size: $DB_SIZE" >> /root/MyTest.yml
     fi
   fi
