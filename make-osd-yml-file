@@ -1,6 +1,6 @@
 #!/bin/bash
-SVER='1.00-001'
-SDATE="2018 09 27"
+SVER='1.00-002'
+SDATE="2019 05 03"
 ##############################################################################
 # changes:
 #
@@ -59,7 +59,9 @@ show_help() {
   echo '    Use: "ll /dev/disk/by-id/scsi-*", to pick the correct device label.'
   echo '    ie "scsi-3*" may be the best choice of device label.'
   echo
-  echo './make-osd-yml-file.sh -d 2G -w 50G -j scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-0-0-0 -o "/dev/disk/by-id/scsi-*"'
+  echo ' ./make-osd-yml-file.sh -d 2G -w 50G -j scsi-0QEMU_QEMU_HARDDISK_drive-scsi0-0-0-0 -o "/dev/disk/by-id/scsi-*"'
+  echo 'or for no seperate jurnaling device'
+  echo ' ./make-osd-yml-file.sh -o "/dev/disk/by-id/scsi-*"'
   echo
 }
 
@@ -93,33 +95,53 @@ do
  esac
 done
 
+#MAIN
 echo "Journaling device: "$JOURNALING_DEV
 echo "osd list: "$OSD_LIST
 echo "db_size= "$DB_SIZE
 echo "wal_size= "$WAL_SIZE
 
-CompleteList=$(ls -lt $OSD_LIST | grep -v "part"| cut -d " " -f10)
+CompleteList=$(ls $OSD_LIST | grep -v "part")
 echo "osd list: "$CompleteList
-
-echo "ceph:" >> /root/MyTest.yml
+echo
+echo "Creating: /root/MyTest.yml"
+echo
+echo "ceph:" > /root/MyTest.yml
 echo "  storage:" >> /root/MyTest.yml
 echo "    osds:" >> /root/MyTest.yml
 for i in $CompleteList
 do
-  #echo "i: "$i
-  #echo "j: "$JOURNALING_DEV
-  if echo "$i" | grep -q "$JOURNALING_DEV"; then
+#  echo "i: "$i
+#  echo "j: "$JOURNALING_DEV
+  if [ "$i" == "$JOURNALING_DEV" ]; then
     echo "skipping: " $i
     echo "it's the Journaling device."
     echo
   else
     echo "processing: "$i
-    echo
     echo "      $i:" >> /root/MyTest.yml
     echo "        format: bluestore" >> /root/MyTest.yml
-    echo "        wal: $JOURNALING_DEV" >> /root/MyTest.yml
-    echo "        wal_size: $WAL_SIZE" >> /root/MyTest.yml
-    echo "        db: $JOURNALING_DEV" >> /root/MyTest.yml
-    echo "        db_size: $DB_SIZE" >> /root/MyTest.yml
+    #Check if variable is NOT null (-n)
+    #Check if variable is null (-z)
+    if [ -n "$JOURNALING_DEV" ]; then
+      echo "        wal: $JOURNALING_DEV" >> /root/MyTest.yml
+    fi
+
+    if [ -n "$WAL_SIZE" ]; then
+      echo "        wal_size: $WAL_SIZE" >> /root/MyTest.yml
+    fi
+
+    if [ -n "$JOURNALING_DEV" ]; then
+      echo "        db: $JOURNALING_DEV" >> /root/MyTest.yml
+    fi
+
+    if [ -n "$DB_SIZE" ]; then
+      echo "        db_size: $DB_SIZE" >> /root/MyTest.yml
+    fi
   fi
 done
+echo
+echo "cat /root/MyTest.yml"
+echo "================"
+cat /root/MyTest.yml
+echo "================"
