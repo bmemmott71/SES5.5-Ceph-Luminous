@@ -3,7 +3,7 @@ SVER='1.00-002'
 SDATE="2019 05 03"
 ##############################################################################
 # changes:
-#
+# 20190503 added ablity to create yml without seperate jurnaling device.
 #
 #
 ##############################################################################
@@ -30,7 +30,8 @@ title() {
         echo "    Script Version: $SVER"
         echo "    Script Date: $SDATE"
         echo
-        echo " This script is used to create a simple osd yml file with a journaling device."
+        echo " This script is used to create a simple osd yml file with or without "
+        echo " a journaling device."
         echo "============================================================================="
         echo
 }
