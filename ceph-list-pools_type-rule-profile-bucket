@@ -18,7 +18,7 @@ for POOL in $POOLLIST; do
     K=$(echo $PROFILEINFO | cut -d " " -f5)
     M=$(echo $PROFILEINFO | cut -d " " -f6)
   fi
-  APP=$(ceph osd pool application get iscsi-images | tail -n +2 | head -n1 | sed 's/[^a-zA-Z0-9]//g')
+  APP=$(ceph osd pool application get $POOL | tail -n +2 | head -n1 | sed 's/[^a-zA-Z0-9]//g')
   BUCKET=$(ceph osd crush rule dump $RULE | grep item_name | cut -d " " -f14 | sed 's/[^a-zA-Z0-9~]//g')
   printf "%-20s %-8s %-9s %-16s %-16s %-8s %-8s %-15s\n" "$POOL" "$SIZE/$MSIZE" "$PG/$PGP" "$RULE" "$ECPROFILE" "$K $M" "$APP" "$BUCKET"
 done
