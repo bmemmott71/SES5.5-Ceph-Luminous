@@ -11,6 +11,10 @@ SDATE="2019 06 18"
 # columns 20 & 21 are scrub history
 # columns 23 & 24 are for deep-scrub history
 ########################################################################################
+function pause(){
+   read -p "$*"
+}
+
 echo
 echo "=============================="
 echo "Deep+Scrubbing Distribution by day:"
@@ -19,9 +23,16 @@ echo
 echo "Deep+Scrubbing Distribution by hour:"
 for date in `ceph pg dump | grep active | awk '{print $24}'`; do date +%H -d $date; done | sort | uniq -c
 echo
+echo
+echo "End of Deep+Scrubbing"
+echo
+pause 'Press [Enter] key to continue...'
+echo
 echo "=============================="
 echo "Scrubbing distribution by day:"
 for date in `ceph pg dump | grep active | awk '{print $20}'`; do date +%A -d $date; done | sort | uniq -c
 echo
 echo "Scrubbing distribution per hour:"
 for date in `ceph pg dump | grep active | awk '{print $21}'`; do date +%H -d $date; done | sort | uniq -c
+echo
+echo "End of Scrubbing"
