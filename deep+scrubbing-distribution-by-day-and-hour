@@ -7,6 +7,7 @@ SDATE="2019 06 18"
 # Description:
 # Run on the admin node.
 #
+# "ceph pg dump"
 # columns 20 & 21 are scrub history
 # columns 23 & 24 are for deep-scrub history
 ########################################################################################
