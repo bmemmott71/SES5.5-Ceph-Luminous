@@ -25,4 +25,3 @@ for date in `ceph pg dump | grep active | awk '{print $20}'`; do date +%A -d $da
 echo
 echo "Scrubbing distribution per hour:"
 for date in `ceph pg dump | grep active | awk '{print $21}'`; do date +%H -d $date; done | sort | uniq -c
-
