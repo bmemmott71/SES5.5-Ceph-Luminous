@@ -1,0 +1,17 @@
+#!/bin/bash
+########################################################################################
+# SUSE Enterprise Storage 5, Script to list deep+scrubbing by day and hour.
+SVER='1.00-000'
+SDATE="2019 06 18"
+#
+# Description:
+# Run on the admin node.
+#
+# columns 20 & 21 are scrub history
+# columns 23 & 24 are for deep-scrub history
+########################################################################################
+echo "Deep+Scrubbing Distribution by day:"
+for date in `ceph pg dump | grep active | awk '{print $23}'`; do date +%A -d $date; done | sort | uniq -c
+echo
+echo "Deep+Scrubbing Distribution by hour:"
+for date in `ceph pg dump | grep active | awk '{print $24}'`; do date +%H -d $date; done | sort | uniq -c
