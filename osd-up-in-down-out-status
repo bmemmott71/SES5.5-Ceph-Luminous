@@ -1,0 +1,3 @@
+#!/bin/bash
+# Simple script to get up/in vs down/out status for all osd's. 
+ceph osd dump | grep -F osd. | cut -d " " -f1,2,3,4,5 | column -t
