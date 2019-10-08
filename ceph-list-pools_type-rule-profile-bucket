@@ -1,4 +1,6 @@
 #!/bin/bash
+# Modified to work with SES5 & SES6
+
 echo ""
 date; ceph df
 
@@ -8,12 +10,14 @@ printf "%-20s %-8s %-9s %-16s %-16s %-8s %-8s %-15s\n" "Pool" "Size/Min" "PG/PGP
 POOLLIST=$(ceph osd pool ls)
 for POOL in $POOLLIST; do
   POOLINFO=$(ceph osd pool get $POOL all)
-  SIZE=$(echo $POOLINFO  | cut -d " " -f2)
-  MSIZE=$(echo $POOLINFO  | cut -d " " -f4)
-  PG=$(echo $POOLINFO  | cut -d " " -f8)
-  PGP=$(echo $POOLINFO  | cut -d " " -f10)
-  RULE=$(echo $POOLINFO  | cut -d " " -f12)
-  ECPROFILE=$(echo $POOLINFO  | cut -d " " -f34)
+#  echo "$POOLINFO"
+
+  SIZE=$(echo "$POOLINFO" | grep -m 1 size: | cut -d " " -f2)
+  MSIZE=$(echo "$POOLINFO" | grep -m 1 min_size: | cut -d " " -f2)
+  PG=$(echo "$POOLINFO" | grep -m 1 pg_num: | cut -d " " -f2)
+  PGP=$(echo "$POOLINFO" | grep -m 1 pgp_num: | cut -d " " -f2)
+  RULE=$(echo "$POOLINFO" | grep -m 1 crush_rule: | cut -d " " -f2)
+  ECPROFILE=$(echo "$POOLINFO" | grep -m 1 erasure_code_profile: | cut -d " " -f2)
   RULEINFO=$(ceph osd crush rule dump $RULE)
   RULETYPE=$(echo $RULEINFO | cut -d " " -f9 | sed 's/[^a-zA-Z0-9]//g')
   if [ $RULETYPE = 3 ]; then
@@ -24,4 +28,5 @@ for POOL in $POOLLIST; do
   APP=$(ceph osd pool application get $POOL | tail -n +2 | head -n1 | sed 's/[^a-zA-Z0-9]//g')
   BUCKET=$(ceph osd crush rule dump $RULE | grep item_name | cut -d " " -f14 | sed 's/[^a-zA-Z0-9~]//g')
   printf "%-20s %-8s %-9s %-16s %-16s %-8s %-8s %-15s\n" "$POOL" "$SIZE/$MSIZE" "$PG/$PGP" "$RULE" "$ECPROFILE" "$K $M" "$APP" "$BUCKET"
+#exit
 done
