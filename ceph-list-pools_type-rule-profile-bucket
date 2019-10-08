@@ -1,5 +1,16 @@
 #!/bin/bash
+########################################################################################
+# SUSE Enterprise Storage 5/6, Script to list pools and attributes.
+SVER='1.00-000'
+SDATE="2019 10 09"
+#
+# Description:
+# This script will list pools and attributes.
+# It is helpful when identifing pg's, crush rules, and profiles. 
+#
+# Run on the admin node.
 # Modified to work with SES5 & SES6
+########################################################################################
 
 echo ""
 date; ceph df
