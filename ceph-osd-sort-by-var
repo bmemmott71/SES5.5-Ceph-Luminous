@@ -1,8 +1,8 @@
 #!/bin/bash
 ########################################################################################
-# SUSE Enterprise Storage 5, Script to list osd's sorted by var value.
-SVER='1.00-000'
-SDATE="2019 04 09"
+# SUSE Enterprise Storage 5/6, Script to list osd's sorted by var value.
+SVER='1.00-001'
+SDATE="2019 10 08"
 #
 # Description:
 # This script will list osd's sorted by var value.
@@ -15,7 +15,11 @@ SDATE="2019 04 09"
 #     ceph osd test-reweight-by-utilization 110 0.05 20
 #   Then implement:
 #     ceph osd reweight-by-utilization 110 0.05 20
+#
+# SES6, also consider pg auto balancer: "ceph balancer status" 
+#
+#  20191008- removed:  sort -u option.
 ######################################################################################## 
 
 # ceph osd df | grep hdd | sort -rk9 | head -n15
-ceph osd df | (read -r; printf "%s\n" "$REPLY"; sort -nurk9) | head -n 20
+ceph osd df | (read -r; printf "%s\n" "$REPLY"; sort -nrk9) | head -n 20
