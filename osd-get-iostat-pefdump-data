@@ -1,0 +1,41 @@
+#!/bin/bash
+# iostat will run in subshell.
+# Will create log files in "pwd".
+# if Count = MaxCount, exit.
+# remove "exit", if you want script to run forever.  "discuraged" due to space concerns..
+
+SleepTime=10
+MaxCount=100
+Count=0
+
+mapfile -t osd_array < <(mount | grep ceph- | cut -d- -f2 | cut -d' ' -f1)
+
+trap "exit" INT TERM ERR
+trap "kill 0" EXIT
+MYDIR=$(pwd)
+
+DateTime=$(date +%Y%m%d-%H%M%S)
+echo "  iostat will run as a background process."
+echo "  Writting log files to: $MYDIR "
+nohup /usr/bin/iostat -xt $SleepTime >> $"$MYDIR/$DateTime-$HOSTNAME-iostat.log" &
+
+child_count=$(($(pgrep --parent $$ | wc -l) - 1))
+echo "  SubShells Created: $child_count " 2>&1
+echo "  Logging: iostat, perf dump, dump_historic_ops, dump_blocked_ops, ops_inflight data"
+echo "  Press '<ctl>+c' to terminate."
+while [ : ] ; do
+  Count=$(($Count+1))
+  echo -ne "  Sleep cycles: " "\b$Count" \\r
+  for x in "${osd_array[@]}"; do
+    { date;
+    ceph daemon osd.$x perf dump;
+    ceph daemon osd.$x dump_historic_ops;
+    ceph daemon osd.$x dump_blocked_ops;
+    ceph daemon osd.$x dump_ops_in_flight;
+    } >> $"$MYDIR/$DateTime-$HOSTNAME-perf_dump$x.log"
+  done
+  if [ "$Count" -eq "$MaxCount" ]; then
+    exit
+  fi
+  sleep $SleepTime
+done
