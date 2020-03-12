@@ -5,7 +5,7 @@ SVER='1.00-000'
 SDATE="2020 03 11"
 #
 # Description: 
-# Logging: iostat, perf dump, dump_historic_ops, dump_blocked_ops, ops_inflight data.
+# Logging: iostat, perf dump, dump_historic_ops, dump_blocked_ops, ops_inflight data, top.
 # 
 # Default behavior:
 # iostat will run in subshell and will terminate when script is terminated or exit.
@@ -33,19 +33,22 @@ nohup /usr/bin/iostat -xt $SleepTime >> $"$MYDIR/$DateTime-$HOSTNAME-iostat.log"
 
 child_count=$(($(pgrep --parent $$ | wc -l) - 1))
 echo "  SubShells Created: $child_count " 2>&1
-echo "  Logging: iostat, perf dump, dump_historic_ops, dump_blocked_ops, ops_inflight data"
+echo "  Logging: iostat, perf dump, dump_historic_ops, dump_blocked_ops, ops_inflight data, top"
 echo "  Press '<ctl>+c' to terminate."
 while [ : ] ; do
   Count=$(($Count+1))
   echo -ne "  Sleep cycles: " "\b$Count" \\r
   for x in "${osd_array[@]}"; do
-    { date;
+    { date +%Y%m%d-%H%M%S;
     ceph daemon osd.$x perf dump;
     ceph daemon osd.$x dump_historic_ops;
     ceph daemon osd.$x dump_blocked_ops;
     ceph daemon osd.$x dump_ops_in_flight;
     } >> $"$MYDIR/$DateTime-$HOSTNAME-perf_dump$x.log"
   done
+  echo $(date +%Y%m%d-%H%M%S) >> $MYDIR$DateTime-$HOSTNAME-top.log
+  /usr/bin/top -b -n 1| head -n 30 >> $"$MYDIR/$DateTime-$HOSTNAME-top.log" 
+  echo "" >> $MYDIR$DateTime-$HOSTNAME-top.log 
   if [ "$Count" -eq "$MaxCount" ]; then
     exit
   fi
