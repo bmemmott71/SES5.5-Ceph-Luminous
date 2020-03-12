@@ -1,9 +1,21 @@
 #!/bin/bash
-# iostat will run in subshell.
-# Will create log files in "pwd".
-# if Count = MaxCount, exit.
-# remove "exit", if you want script to run forever.  "discuraged" due to space concerns..
-
+########################################################################################
+# SUSE Enterprise Storage 5.5 & 6
+SVER='1.00-000'
+SDATE="2020 03 11"
+#
+# Description: 
+# Logging: iostat, perf dump, dump_historic_ops, dump_blocked_ops, ops_inflight data.
+# 
+# Default behavior:
+# iostat will run in subshell and will terminate when script is terminated or exit.
+# script will create log files in "pwd".
+# script will run for MaxCount=100 iterations, then exit.
+# script will sleep for SleepTime=10, each iteration.
+# Remove "exit", if you want script to run forever.  Discuraged due to space concerns..
+# Use "<ctl>+c" to terminate script.
+# Verify iostat subshell was terminated.  iostat log file should stop incramenting in size.
+######################################################################################## 
 SleepTime=10
 MaxCount=100
 Count=0
