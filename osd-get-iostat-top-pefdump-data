@@ -1,12 +1,12 @@
 #!/bin/bash
 ########################################################################################
-# SUSE Enterprise Storage 5.5 & 6
-SVER='1.00-001'
-SDATE="2020 03 11"
+# USE Enterprise Storage 5.5 & 6
+SVER='1.00-002'
+SDATE="2020 04 24"
 #
-# Description: 
+# Description:
 # Logging: iostat, perf dump, dump_historic_ops, dump_blocked_ops, ops_inflight data, top.
-# 
+#
 # Default behavior:
 # iostat will run in subshell and will terminate when script is terminated or exit.
 # script will create log files in "pwd".
@@ -22,7 +22,11 @@ SleepTime=10
 MaxCount=100
 Count=0
 
+Change the variable when using encrypted osd's: 
+# Not encrypted osd's:
 mapfile -t osd_array < <(mount | grep ceph- | cut -d- -f2 | cut -d' ' -f1)
+# Encrypted osd's:
+# mapfile -t osd_array < <(mount | grep ceph- | cut -d " " -f3 | cut -d- -f2)
 
 trap "exit" INT TERM ERR
 trap "kill 0" EXIT
