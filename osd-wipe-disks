@@ -161,7 +161,9 @@ do
 
   # Creating new partition table on the drive.
   echo " Creating new partition table on: $device"
-  sgdisk -Z --clear -g $device | indent
+  #sgdisk -Z --clear -g $device | indent
+  sgdisk -Z --clear $device | indent
+  wipefs -a $device | indent
   echo 
 
   # Verify:
