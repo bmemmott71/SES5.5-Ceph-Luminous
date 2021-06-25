@@ -1,8 +1,8 @@
 #!/bin/bash
 ########################################################################################
 # SUSE Enterprise Storage 5, Script to wipe osd devices of partitions and partition table
-SVER='1.00-008'
-SDATE="2019 03 19"
+SVER='1.00-009'
+SDATE="2021 06 25"
 #
 # Description: 
 # This script is intended to wipe partition data from drives that are intended to be 
